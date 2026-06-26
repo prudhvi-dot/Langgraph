@@ -1,6 +1,7 @@
 from langgraph.graph import StateGraph, START, END
 from langchain_google_genai import ChatGoogleGenerativeAI
-from typing import Literal, TypedDict
+from typing import Literal, TypedDict, Annotated
+from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -13,6 +14,13 @@ class Feedback_State(TypedDict):
     sentiment: str
     diagnosis: str
     response: str
+
+
+class Sentiment_Model(BaseModel):
+    sentiment: Annotated[
+        Literal["positive", "negative"],
+        Field(..., description="sentiment of the feedback"),
+    ]
 
 
 graph = StateGraph(Feedback_State)
