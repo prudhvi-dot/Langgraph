@@ -67,3 +67,5 @@ workflow = graph.compile()
 final_state = workflow.invoke({"topic": "cricket"})
 
 print(final_state["language_feedback"])
+
+workflow = graph.compile()
