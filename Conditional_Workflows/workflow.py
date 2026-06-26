@@ -11,7 +11,7 @@ llm_model = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
 
 class Feedback_State(TypedDict):
     feedback: str
-    sentiment: str
+    sentiment: Literal["positive", "negative"]
     diagnosis: str
     response: str
 
