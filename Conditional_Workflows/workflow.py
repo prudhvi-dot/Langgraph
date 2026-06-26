@@ -23,13 +23,16 @@ class Sentiment_Model(BaseModel):
     ]
 
 
+structure_model = llm_model.with_structured_output(Sentiment_Model)
+
+
 graph = StateGraph(Feedback_State)
 
 
 def get_sentiment(state: Feedback_State):
     feedback = state["feedback"]
 
-    response = llm_model.invoke(
+    response = Sentiment_Model.invoke(
         f"give the sentiment of the feedback weather it is positive or negative in a single word.\nfeedback: {feedback}"
     )
 
