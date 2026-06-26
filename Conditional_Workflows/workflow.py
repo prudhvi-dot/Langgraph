@@ -9,10 +9,16 @@ load_dotenv()
 llm_model = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
 
 
+class Diagnosis(TypedDict):
+    issue_type: Literal["Performance", "damage", "other"]
+    tone: Literal["angry", "calm", "disappointed"]
+    urgency: Literal["low", "medium", "high"]
+
+
 class Feedback_State(TypedDict):
     feedback: str
     sentiment: Literal["positive", "negative"]
-    diagnosis: str
+    diagnosis: Diagnosis
     response: str
 
 
@@ -23,7 +29,23 @@ class Sentiment_Model(BaseModel):
     ]
 
 
-structure_model = llm_model.with_structured_output(Sentiment_Model)
+class Diagnosis_Model(BaseModel):
+    issue_type: Annotated[
+        Literal["Performance", "damage", "other"],
+        Field(description="Category of the issue"),
+    ]
+    tone: Annotated[
+        Literal["angry", "calm", "disappointed"],
+        Field(description="Emotional tone of the user"),
+    ]
+    urgency: Annotated[
+        Literal["low", "medium", "high"],
+        Field(description="How urgent or critical the issue appears to be"),
+    ]
+
+
+structured_model = llm_model.with_structured_output(Sentiment_Model)
+structured_model2 = llm_model.with_structured_output(Diagnosis_Model)
 
 
 graph = StateGraph(Feedback_State)
@@ -32,11 +54,11 @@ graph = StateGraph(Feedback_State)
 def get_sentiment(state: Feedback_State):
     feedback = state["feedback"]
 
-    response = Sentiment_Model.invoke(
+    response = structured_model.invoke(
         f"give the sentiment of the feedback weather it is positive or negative in a single word.\nfeedback: {feedback}"
     )
 
-    return {"sentiment": response.content}
+    return {"sentiment": response.sentiment}
 
 
 def check_sentiment(state: Feedback_State) -> Literal["positive", "negative"]:
@@ -68,11 +90,11 @@ def negative_response(state: Feedback_State):
 
 def get_diagnosis(state: Feedback_State):
     feedback = state["feedback"]
-    response = llm_model.invoke(
+    response = structured_model2.invoke(
         f"give the diagnosis for the feedback.\nfeedback: {feedback}"
     )
 
-    return {"diagnosis": response.content}
+    return {"diagnosis": response.model_dump()}
 
 
 graph.add_node("get_sentiment", get_sentiment)
@@ -98,4 +120,4 @@ final_state = workflow.invoke(
     }
 )
 
-print(final_state["response"])
+print(final_state["diagnosis"])
